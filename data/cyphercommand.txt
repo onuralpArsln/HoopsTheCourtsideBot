@@ -1,0 +1,49 @@
+CREATE CONSTRAINT unique_team IF NOT EXISTS FOR (t:Team) REQUIRE t.id IS UNIQUE;
+CREATE CONSTRAINT unique_player IF NOT EXISTS FOR (p:Player) REQUIRE p.id IS UNIQUE;
+CREATE CONSTRAINT unique_match IF NOT EXISTS FOR (m:Match) REQUIRE m.id IS UNIQUE;
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/teams.csv' AS row
+WITH row WHERE row.team_id IS NOT NULL AND trim(row.team_id) <> ""
+MERGE (:Team {id: row.team_id, name: row.team_name});
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/players.csv' AS row
+WITH row WHERE row.player_id IS NOT NULL AND trim(row.player_id) <> ""
+MATCH (t:Team {id: row.team_id})
+MERGE (p:Player {id: row.player_id, name: row.player_name})
+MERGE (p)-[:PLAYS_FOR]->(t);
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/matches.csv' AS matchRow
+WITH matchRow WHERE matchRow.match_id IS NOT NULL AND trim(matchRow.match_id) <> ""
+MATCH (t1:Team {id: matchRow.team1_id})
+MATCH (t2:Team {id: matchRow.team2_id})
+MERGE (m:Match {
+  id: matchRow.match_id,
+  date: matchRow.date,
+  team1_score: toInteger(matchRow.team1_score),
+  team2_score: toInteger(matchRow.team2_score),
+  winner_team_id: matchRow.winner_team_id
+})
+MERGE (t1)-[:PLAYED]->(m)
+MERGE (t2)-[:PLAYED]->(m)
+FOREACH (_ IN CASE WHEN matchRow.winner_team_id = matchRow.team1_id THEN [1] ELSE [] END |
+  MERGE (t1)-[:WON]->(m)
+  MERGE (t2)-[:LOST]->(m)
+)
+FOREACH (_ IN CASE WHEN matchRow.winner_team_id = matchRow.team2_id THEN [1] ELSE [] END |
+  MERGE (t2)-[:WON]->(m)
+  MERGE (t1)-[:LOST]->(m)
+);
+
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/match_summaries.csv' AS row
+WITH row WHERE row.match_id IS NOT NULL AND trim(row.match_id) <> ""
+MATCH (m:Match {id: row.match_id})
+SET m.summary = row.summary,
+    m.summary_embedding = row.summary_embedding;
+
+
+LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/player_scores.csv' AS row
+WITH row WHERE row.match_id IS NOT NULL AND row.player_id IS NOT NULL
+MATCH (p:Player {id: row.player_id})
+MATCH (m:Match {id: row.match_id})
+MERGE (p)-[:SCORED {points: toInteger(row.points_scored)}]->(m);
