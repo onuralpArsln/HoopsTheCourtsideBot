@@ -12,7 +12,7 @@ from utils import get_session_id
 
 chat_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a movie expert providing information about movies."),
+        ("system", "You are a basketball enthusiast providing information about nba and basketball."),
         ("human", "{input}"),
     ]
 )
