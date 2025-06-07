@@ -1,0 +1,6 @@
+match_id,date,team1_id,team2_id,team1_score,team2_score,winner_team_id
+M1,2025-01-10,T1,T2,78,82,T2
+M2,2025-01-15,T3,T4,91,85,T3
+M3,2025-01-20,T2,T5,88,90,T5
+M4,2025-01-25,T1,T3,95,89,T1
+M5,2025-01-30,T4,T5,77,80,T5
