@@ -8,7 +8,7 @@ def get_team_info(query):
     """
     # First, use LLM to extract team name from the query
     extract_prompt = ChatPromptTemplate.from_messages([
-        ("system", "Extract the team name from the following question. Return only the team name, nothing else. If you can't identify a specific team, return 'unknown'."),
+        ("system", "Extract the basketball team name from the following question. Return only the team name, nothing else. If you can't identify a specific basketball team, return 'unknown'. Make sure to return the full team name as it would appear in a basketball league."),
         ("human", "{query}")
     ])
     
@@ -22,7 +22,7 @@ def get_team_info(query):
     # Query Neo4j for team information
     team_query = """
     MATCH (t:Team)
-    WHERE t.name CONTAINS $team_name
+    WHERE toLower(t.name) CONTAINS toLower($team_name)
     OPTIONAL MATCH (p:Player)-[:PLAYS_FOR]->(t)
     OPTIONAL MATCH (t)-[r:PLAYED]->(m:Match)
     WITH t, 
