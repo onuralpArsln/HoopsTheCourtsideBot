@@ -10,35 +10,41 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain import hub
 from utils import get_session_id
 from tools.vector import get_match_summary_answer
+from tools.team import get_team_info
 
 chat_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a basketball enthusiast providing information about nba and basketball."),
+        ("system", "You are a basketball enthusiast providing information about NBA and basketball."),
         ("human", "{input}"),
     ]
 )
 
-movie_chat = chat_prompt | llm | StrOutputParser()
+basketball_chat = chat_prompt | llm | StrOutputParser()
 
 tools = [
     Tool.from_function(
         name="General Chat",
-        description="For general movie chat not covered by other tools",
-        func=movie_chat.invoke,
+        description="For general basketball chat not covered by other tools",
+        func=basketball_chat.invoke,
     ),
-        Tool.from_function(
+    Tool.from_function(
         name="Match Summary Search",  
-        description="For when you need to find information about matches based on events or results about matches",
+        description="For when you need to find information about matches, teams and players about events, results or performance",
         func=get_match_summary_answer, 
+    ),
+    Tool.from_function(
+        name="Team Information",
+        description="For when you need to find specific information about teams, their players, and team statistics",
+        func=get_team_info,
     )
 ]
 def get_memory(session_id):
     return Neo4jChatMessageHistory(session_id=session_id, graph=graph)
 
 agent_prompt = PromptTemplate.from_template("""
-You are a movie expert providing information about movies.
+You are a basketball enthusiast providing information about basketball matches.
 Be as helpful as possible and return as much information as possible.
-Do not answer any questions that do not relate to movies, actors or directors.
+Do not answer any questions that do not relate to basketball, when asked about a name ensure if they are a basketball team or player.
 
 Do not answer any questions using your pre-trained knowledge, only use the information provided in the context.
 
