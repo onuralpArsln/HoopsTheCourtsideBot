@@ -1,88 +1,148 @@
-# Hoops the Courtside Chatbot 🏀
+# Hoops: The Courtside Bot 🏀
 
-A Streamlit-based conversational chatbot that leverages a Neo4j graph database and OpenAI LLM to answer questions about movies, actors, and directors.
+## Proje Genel Bakış
 
-## Features
+Hoops: The Courtside Bot, basketbol maçları ve istatistikleri hakkında bilgi sağlayan, yapay zeka destekli bir sohbet botudur. Neo4j grafik veritabanı ve OpenAI'nin GPT modellerini kullanarak, kullanıcılara basketbol dünyası hakkında detaylı ve doğru bilgiler sunar.
 
-- Conversational UI powered by Streamlit
-- Integrates with Neo4j for movie knowledge graph queries
-- Uses OpenAI's GPT model for natural language understanding
-- Session-based chat history stored in Neo4j
-- Customizable agent with tool-based reasoning
+### Sistem Akış Şeması
 
-## Project Structure
+```mermaid
+graph TD
+    A[Kullanıcı Sorgusu] --> B[Streamlit Arayüzü]
+    B --> C[Agent]
+    C --> D[Tool Seçimi]
+    D --> E1[Player Tool]
+    D --> E2[Team Tool]
+    D --> E3[Recent Tool]
+    D --> E4[Vector Tool]
+    E1 --> F[Neo4j Veritabanı]
+    E2 --> F
+    E3 --> F
+    E4 --> F
+    F --> G[Sonuçlar]
+    G --> H[GPT İşleme]
+    H --> I[Kullanıcı Yanıtı]
+```
+
+## Kurulum
+
+1. Projeyi klonlayın:
+```bash
+git clone https://github.com/onuralpArsln/HoopsTheCourtsideBot.git
+cd HoopsTheCourtsideBot
+```
+
+2. Gerekli paketleri yükleyin:
+```bash
+pip install -r requirements.txt
+```
+
+3. Gerekli API anahtarlarını ve kimlik bilgilerini ayarlayın:
+
+`.env` dosyası oluşturun ve aşağıdaki bilgileri ekleyin:
+```
+NEO4J_URI=your_neo4j_uri
+NEO4J_USERNAME=your_username
+NEO4J_PASSWORD=your_password
+OPENAI_API_KEY=your_openai_api_key
+```
+
+`.streamlit/secrets.toml` dosyası oluşturun:
+```toml
+[neo4j]
+uri = "your_neo4j_uri"
+username = "your_username"
+password = "your_password"
+
+[openai]
+api_key = "your_openai_api_key"
+```
+
+## Veritabanı Yapısı
+
+Proje, Neo4j grafik veritabanında aşağıdaki yapıyı kullanır:
+
+### Düğümler (Nodes)
+- **Team**: Takım bilgileri
+  - Özellikler: id, name
+- **Player**: Oyuncu bilgileri
+  - Özellikler: id, name
+- **Match**: Maç bilgileri
+  - Özellikler: id, date, team1_score, team2_score, winner_team_id, summary, summary_embedding
+
+### İlişkiler (Relationships)
+- `(Player)-[:PLAYS_FOR]->(Team)`: Oyuncunun takımı
+- `(Team)-[:PLAYED]->(Match)`: Takımın oynadığı maç
+- `(Team)-[:WON]->(Match)`: Maçı kazanan takım
+- `(Team)-[:LOST]->(Match)`: Maçı kaybeden takım
+- `(Player)-[:SCORED]->(Match)`: Oyuncunun maçtaki sayıları
+
+## Proje Yapısı
 
 ```
-.
-├── agent.py         # Conversational agent logic and orchestration
-├── bot.py           # Streamlit UI and main app entry point
-├── graph.py         # Neo4j graph connection setup
-├── llm.py           # OpenAI LLM configuration
-├── utils.py         # Utility functions for Streamlit and session management
-├── imgs/            # Images for UI (e.g., bb.png)
-├── .streamlit/      # Streamlit configuration and secrets
-│   └── secrets.toml
-└── .gitignore
+HoopsTheCourtsideBot/
+├── agent.py           # Ana agent yapısı
+├── bot.py            # Bot ana uygulaması
+├── graph.py          # Neo4j bağlantı yönetimi
+├── llm.py            # LLM entegrasyonu
+├── matchSumEmbGen.py # Maç özeti embedding oluşturucu
+├── tools/            # Bot araçları
+│   ├── player.py     # Oyuncu sorgulama aracı
+│   ├── team.py       # Takım sorgulama aracı
+│   ├── recent.py     # Son maçlar aracı
+│   ├── cypher.py     # Cypher sorgu aracı
+│   └── vector.py     # Vektör arama aracı
+├── data/             # Veri dosyaları
+│   ├── teams.csv
+│   ├── players.csv
+│   ├── matches.csv
+│   ├── player_scores.csv
+│   └── match_summaries.csv
+└── .streamlit/       # Streamlit yapılandırması
 ```
 
-## Setup
+## Araçlar (Tools)
 
-1. **Clone the repository**
+### 1. Player Tool
+- Oyuncular hakkında detaylı bilgi sağlar
+- Oyuncu istatistiklerini ve performans verilerini sorgular
+- Takım bilgilerini ve maç geçmişini gösterir
 
-   ```sh
-   git clone <repo-url>
-   cd HoopsTheCourtsideBot
-   ```
+### 2. Team Tool
+- Takım istatistiklerini ve performans verilerini sunar
+- Takımın oyuncularını listeler
+- Maç geçmişi ve sonuçlarını gösterir
 
-2. **Install dependencies**
+### 3. Recent Tool
+- Son oynanan maçların özetlerini sunar
+- Maç sonuçlarını ve önemli olayları listeler
+- Oyuncu performanslarını gösterir
 
-   ```sh
-   pip install -r requirements.txt
-   ```
+### 4. Vector Tool
+- Maç özetlerinde semantik arama yapar
+- Benzer maçları bulur
+- Özel sorgulara göre maç analizi yapar
 
-   *(You may need to create `requirements.txt` with packages such as `streamlit`, `langchain`, `langchain-openai`, `langchain-neo4j`, `python-dotenv`.)*
+### 5. Cypher Tool
+- Özel Neo4j Cypher sorguları çalıştırır
+- Karmaşık veri analizleri yapar
+- Özelleştirilmiş raporlar oluşturur
 
-3. **Configure secrets**
+## Kullanım
 
-   - Edit `.streamlit/secrets.toml` with your Neo4j credentials:
+Botu başlatmak için:
+```bash
+streamlit run bot.py
+```
 
-     ```toml
-     NEO4J_URI = "bolt://<your-neo4j-host>:7687"
-     NEO4J_USERNAME = "<your-username>"
-     NEO4J_PASSWORD = "<your-password>"
-     ```
+## Katkıda Bulunma
 
-   - Set your OpenAI API key in a `.env` file:
+1. Bu depoyu fork edin
+2. Yeni bir branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Add some amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Bir Pull Request oluşturun
 
-     ```
-     AI_KEY=sk-...
-     ```
+## Lisans
 
-4. **Run the app**
-
-   ```sh
-   streamlit run bot.py
-   ```
-
-## Usage
-
-- Interact with the chatbot via the Streamlit web UI.
-- Ask questions about movies, actors, or directors.
-- The chatbot will use the Neo4j database to answer your queries.
-
-## File Descriptions
-
-- [`bot.py`](bot.py): Streamlit UI, handles user input and displays chat.
-- [`agent.py`](agent.py): Sets up the conversational agent, tools, and memory.
-- [`graph.py`](graph.py): Connects to the Neo4j database using Streamlit secrets.
-- [`llm.py`](llm.py): Loads OpenAI LLM with API key from environment.
-- [`utils.py`](utils.py): Helper functions for message handling and session management.
-
-## Notes
-
-- The chatbot is currently configured for movie-related queries only.
-- Make sure your Neo4j instance is running and accessible.
-
----
-
-*Built with ❤️ using Streamlit, LangChain, Neo4j, and OpenAI.*
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakın.
