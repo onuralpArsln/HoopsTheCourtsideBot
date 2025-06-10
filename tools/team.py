@@ -25,16 +25,24 @@ def get_team_info(query):
     WHERE toLower(t.name) CONTAINS toLower($team_name)
     OPTIONAL MATCH (p:Player)-[:PLAYS_FOR]->(t)
     OPTIONAL MATCH (t)-[r:PLAYED]->(m:Match)
+    OPTIONAL MATCH (opp:Team)-[:PLAYED]->(m)
+    WHERE opp <> t
     WITH t, 
          collect(DISTINCT p.name) as players,
          count(DISTINCT m) as total_matches,
-         count(DISTINCT CASE WHEN t.id = m.winner_team_id THEN m END) as wins
+         count(DISTINCT CASE WHEN t.id = m.winner_team_id THEN m END) as wins,
+         collect(DISTINCT {
+             opponent: opp.name,
+             result: CASE WHEN t.id = m.winner_team_id THEN 'Won' ELSE 'Lost' END,
+             date: m.date
+         }) as match_history
     RETURN {
         team_name: t.name,
         players: players,
         total_matches: total_matches,
         wins: wins,
-        win_percentage: CASE WHEN total_matches > 0 THEN toFloat(wins)/total_matches * 100 ELSE 0 END
+        win_percentage: CASE WHEN total_matches > 0 THEN toFloat(wins)/total_matches * 100 ELSE 0 END,
+        match_history: match_history
     } as team_info
     """
     
@@ -55,8 +63,30 @@ def get_team_info(query):
         
         Players:
         {', '.join(team_info['players']) if team_info['players'] else 'No players found'}
+        
+        Recent Matches:
+        {format_match_history(team_info['match_history'])}
         """
         
         return response
     except Exception as e:
-        return f"An error occurred while searching for team information: {str(e)}" 
+        return f"An error occurred while searching for team information: {str(e)}"
+
+def format_match_history(match_history):
+    """Format the match history into a readable string."""
+    if not match_history:
+        return "No match history available"
+    
+    # Sort matches by date (most recent first)
+    sorted_matches = sorted(match_history, key=lambda x: x.get('date', ''), reverse=True)
+    
+    # Take only the last 5 matches
+    recent_matches = sorted_matches[:5]
+    
+    formatted_matches = []
+    for match in recent_matches:
+        formatted_matches.append(
+            f"vs {match['opponent']}: {match['result']} ({match.get('date', 'Unknown date')})"
+        )
+    
+    return '\n'.join(formatted_matches) 
