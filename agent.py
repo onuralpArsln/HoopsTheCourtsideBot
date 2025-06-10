@@ -9,6 +9,7 @@ from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain import hub
 from utils import get_session_id
+from tools.vector import get_match_summary_answer
 
 chat_prompt = ChatPromptTemplate.from_messages(
     [
@@ -24,6 +25,11 @@ tools = [
         name="General Chat",
         description="For general movie chat not covered by other tools",
         func=movie_chat.invoke,
+    ),
+        Tool.from_function(
+        name="Match Summary Search",  
+        description="For when you need to find information about matches based on events or results about matches",
+        func=get_match_summary_answer, 
     )
 ]
 def get_memory(session_id):

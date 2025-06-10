@@ -3,6 +3,16 @@ CREATE CONSTRAINT unique_team IF NOT EXISTS FOR (t:Team) REQUIRE t.id IS UNIQUE;
 CREATE CONSTRAINT unique_player IF NOT EXISTS FOR (p:Player) REQUIRE p.id IS UNIQUE;
 CREATE CONSTRAINT unique_match IF NOT EXISTS FOR (m:Match) REQUIRE m.id IS UNIQUE;
 
+// CREATE VECTOR INDEX FOR MATCH SUMMARIES
+CREATE VECTOR INDEX matchSummaries IF NOT EXISTS
+FOR (m:Match) ON (m.summary_embedding)
+OPTIONS {
+  indexConfig: {
+    `vector.dimensions`: 1536,
+    `vector.similarity_function`: 'cosine'
+  }
+};
+
 // LOAD TEAMS
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/teams.csv' AS row
 WITH row WHERE row.team_id IS NOT NULL AND trim(row.team_id) <> ""
@@ -43,7 +53,7 @@ LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/Hoops
 WITH row WHERE row.match_id IS NOT NULL AND trim(row.match_id) <> ""
 MATCH (m:Match {id: row.match_id})
 SET m.summary = row.summary,
-    m.summary_embedding = row.summary_embedding; // Optional: Parse this into a list with APOC if needed
+    m.summary_embedding = row.summary_embedding;
 
 // LOAD PLAYER SCORES
 LOAD CSV WITH HEADERS FROM 'https://raw.githubusercontent.com/onuralpArsln/HoopsTheCourtsideBot/main/data/player_scores.csv' AS row
