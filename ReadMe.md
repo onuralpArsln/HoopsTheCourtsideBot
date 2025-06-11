@@ -5,7 +5,7 @@
 Hoops: The Courtside Bot, basketbol maçları ve istatistikleri hakkında bilgi sağlayan, yapay zeka destekli bir sohbet botudur. Neo4j grafik veritabanı ve OpenAI'nin GPT modellerini kullanarak, kullanıcılara basketbol dünyası hakkında detaylı ve doğru bilgiler sunar.
 
 
-![Alt text](imgs\hoops.png)
+![Alt text](imgs/hoops.png)
 
 ### Sistem Akış Şeması
 
